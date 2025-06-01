@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jamaica Map App</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; }
+    .coordinates, .gps-btn {
+      position: absolute;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 1000;
+    }
+    .coordinates { bottom: 10px; left: 10px; }
+    .gps-btn { top: 10px; left: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div class="coordinates" id="coords">Click on the map</div>
+<div class="gps-btn" onclick="locateUser()">📍 Locate Me</div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(() => {
+      console.log('Service Worker registered');
+    });
+  }
+
+  const map = L.map('map').setView([18.1096, -77.2975], 8); // Jamaica
+
+  // Online tile layer
+  const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Geocoder
+  L.Control.geocoder().addTo(map);
+
+  // Routing
+  const control = L.Routing.control({
+    waypoints: [],
+    routeWhileDragging: true,
+    show: false
+  }).addTo(map);
+
+  // Click to add waypoints
+  map.on('click', function (e) {
+    const { lat, lng } = e.latlng;
+    document.getElementById('coords').innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+    control.spliceWaypoints(control.getWaypoints().length, 1, L.latLng(lat, lng));
+  });
+
+  // GPS
+  function locateUser() {
+    map.locate({ setView: true, maxZoom: 15 });
+  }
+
+  map.on('locationfound', function (e) {
+    L.marker(e.latlng).addTo(map).bindPopup("You are here").openPopup();
+  });
+
+  map.on('locationerror', function () {
+    alert("Unable to access your location.");
+  });
+</script>
+
+</body>
+</html>
